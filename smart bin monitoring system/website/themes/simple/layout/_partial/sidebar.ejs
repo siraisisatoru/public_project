@@ -1,0 +1,20 @@
+<div class="flex-none z-10000">
+    <div class="dropdown">
+
+        <label tabindex="0" class="btn max-sm:btn-sm btn-ghost m-0.5 sm:m-1">
+            <i class="text-sm sm:text-xl fa-solid fa-bars"></i>
+        </label>
+
+        <ul tabindex="0" class="dropdown-content menu menu-compact bg-slate-100 w-56 p-2 mt-3 rounded-box">
+            <% for(element in theme.menu){%>
+            <%var str = theme.menu[element].split(" || ")%>
+            <li class="hover:bg-sky-200 rounded-2xl">
+                <a href="<%- url_for(str[0]) %>">
+                    <i class="fa-solid <%=str[1]%> text-sm sm:text-lg"></i>
+                    <div class="text-sm sm:text-lg"><%= __(element) || element%></div>
+                </a>
+            </li>
+            <%}%>
+    </ul>
+  </div>
+</div>

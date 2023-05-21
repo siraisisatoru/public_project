@@ -1,0 +1,316 @@
+<main class="flex flex-wrap p-3 min-w-full mb-auto pb-2">
+    <div id="fp_top_combo_map_gp" class="flex flex-wrap sm:flex-nowrap w-full">
+        <div id="fp_top_combo" class="w-full flex-none sm:basis-4/12 sm:max-w-70 h-72 sm:h-96 ">
+            <div id="fp_combo" class="flex flex-col h-full">
+                <div id="fp_charts" class="flex flex-row w-full h-1/2 sm:h-1/3 p-2 shadow-md">
+                    <div class="flex w-1/2 h-full  items-center justify-center">
+                        <canvas id="fp_chart_1">chart1</canvas>
+                    </div>
+                    <div class="flex w-1/2 h-full  items-center justify-center">
+                        <canvas id="fp_chart_2">chart2</canvas>
+                    </div>
+                </div>
+                <div id="fp_lis" class="overflow-auto w-full h-1/2 sm:h-2/3 p-2 shadow-md">
+                    <h4 class="text-center">All full bins</h4>
+                    <table id="full_bin_list" class="table-auto w-full text-center text-sm">
+                        <thead class="bg-gray-100">
+                            <th>ID</th>
+                            <th>Location</th>
+                            <th>Fullness</th>
+                            <th>Time</th>
+                        </thead>
+                        <tbody id="full_bin_list_body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div id="map" class="w-full flex-none sm:flex-1 h-96 p-2 shadow-md">
+            top map
+        </div>
+    </div>
+
+    <div class="w-full h-80 p-2 shadow-md items-center justify-center">
+
+        <!-- <div style="width:100%;overflow-x: auto;overflow-y: hidden;"> -->
+        <!-- <div style="width:3200px;height:300px;"> -->
+        <canvas id="fp_top_list_trend">list trend</canvas>
+
+        <!-- </div> -->
+        <!-- </div> -->
+
+
+        <!-- <canvas id="fp_top_list_trend">list trend</canvas> -->
+    </div>
+</main>
+
+<script src="./js/lookup.js"></script>
+<script src="./js/lookup_floor_image.js"></script>
+<script src="./js/touchPT_lookup.js"></script>
+<script src="./js/const_lookup.js"></script>
+<script src="./js/ID_map.js"></script>
+
+<script type="module">
+    import {
+        updatePie,
+        updateLine,
+        clearLine,
+        getLineList,
+        removeLine
+    } from "./js/frontPage/fp_chart.js"
+
+    import {
+        setMap,
+        addMarker,
+        updateBuffer,
+        getmarkerList,
+        checkmarkerList,
+        getmarkers,
+        setZoomback
+    } from "./map/map_main.js"
+
+    import {
+        initializeApp
+    } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
+
+    import {
+        getDatabase,
+        ref,
+        child,
+        onValue,
+        get,
+        query,
+        limitToLast
+    } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-database.js";
+
+    setMap( )
+    setZoomback( false )
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAL3XpEw-xxZJcsUQLzt9j0XO2XxdF95Kk",
+        authDomain: "elec5518-7d7c2.firebaseapp.com",
+        databaseURL: "https://elec5518-7d7c2-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "elec5518-7d7c2",
+        storageBucket: "elec5518-7d7c2.appspot.com",
+        messagingSenderId: "29394112797",
+        appId: "1:29394112797:web:c11a859bb4ea52166a91f4",
+    };
+
+    const app = initializeApp( firebaseConfig );
+
+    const db = getDatabase( );
+
+    var SNAPSHOT_buffer = {};
+
+    // var top10Full;
+
+
+
+
+    function update_table_dict ( dataSet ) {
+        // when database updated, call this function
+        table_dict = dataSet.sort( ( a, b ) => b[ 3 ] - a[ 3 ] );
+    }
+
+    function fill_table ( ) {
+        // need sensor_id, building name, level, fullness, time
+        // table_dict is sorted
+        var tbody = document.getElementById( "full_bin_list_body" );
+
+        if ( tbody.hasChildNodes( ) ) {
+            // remove all child
+            removeAllChildNodes( tbody );
+        }
+        if ( table_dict.length > 0 ) {
+            table_dict.forEach( ( row ) => {
+                let trow = document.createElement( "tr" );
+                // console.log( row[ 1 ] )
+                // console.log( getmarkerList ())
+                trow.onclick = function ( ) {
+                    // goFaci(row[1]);
+                    // console.log(index_dict[ row[ 1 ] ]  )
+                    // console.log( checkmarkerList( ) )
+                    if ( checkmarkerList( ) != "undefined" ) {
+                        var targetMarker = getmarkerList( )[ index_dict[ row[ 1 ] ] ];
+                        getmarkers( ).zoomToShowLayer( targetMarker, ( ) => {
+                            targetMarker.fire( "click" );
+                        } );
+                    }
+                };
+                trow.classList.add( "hover:bg-slate-300" );
+                let td1 = document.createElement( "td" );
+                let td2 = document.createElement( "td" );
+                let td3 = document.createElement( "td" );
+                let td4 = document.createElement( "td" );
+                td1.innerHTML = row[ 0 ];
+                td2.innerHTML = row[ 1 ] + " Lv " + row[ 2 ];
+                td3.innerHTML = row[ 3 ] + "%";
+                td4.innerHTML = row[ 4 ];
+                trow.appendChild( td1 );
+                trow.appendChild( td2 );
+                trow.appendChild( td3 );
+                trow.appendChild( td4 );
+                tbody.appendChild( trow );
+            } );
+        }
+    }
+
+    var table_dict = [ ];
+
+    function removeAllChildNodes ( parent ) {
+        while ( parent.firstChild ) {
+            parent.removeChild( parent.firstChild );
+        }
+    }
+
+    function updatePage ( sensor_ID ) {
+        var fullness = [ 0, 0, 0, 0 ]; // 0-25, 25.1-50, 50.1-75, 75.1-100
+        var batteryFullness = [ 0, 0, 0, 0 ]; // 0-25, 25.1-50, 50.1-75, 75.1-100
+        var listDataset = [ ];
+        // ["0000", "J03", "1", 79, time.toJSON().slice(0, 10)]
+
+        // buffer already updated
+        // make updates based from buffer
+
+        for ( const sensor in SNAPSHOT_buffer ) {
+            // console.log(SNAPSHOT[sensor])
+            // console.log(SNAPSHOT[ sensor ][ Object.keys( SNAPSHOT[ sensor ] ) ].location.split(' ')[0])
+            if ( SNAPSHOT_buffer[ sensor ][ Object.keys( SNAPSHOT_buffer[ sensor ] ) ].fullness >= 0.75 ) {
+                let time = new Date( SNAPSHOT_buffer[ sensor ][ Object.keys( SNAPSHOT_buffer[ sensor ] ) ].timestamp );
+
+                listDataset.push( [
+                    sensor,
+                    SNAPSHOT_buffer[ sensor ][ Object.keys( SNAPSHOT_buffer[ sensor ] ) ].location.split( ' ' )[ 0 ],
+                    SNAPSHOT_buffer[ sensor ][ Object.keys( SNAPSHOT_buffer[ sensor ] ) ].level.replace( 'L', '' ),
+                    Math.round( SNAPSHOT_buffer[ sensor ][ Object.keys( SNAPSHOT_buffer[ sensor ] ) ].fullness * 100 * 100 ) / 100,
+                    time.toJSON( ).slice( 0, 10 ),
+                    SNAPSHOT_buffer[ sensor ][ Object.keys( SNAPSHOT_buffer[ sensor ] ) ].level,
+                    SNAPSHOT_buffer[ sensor ][ Object.keys( SNAPSHOT_buffer[ sensor ] ) ].building,
+                ] )
+
+            }
+            console.log( Math.floor( SNAPSHOT_buffer[ sensor ][ Object.keys( SNAPSHOT_buffer[ sensor ] ) ].fullness * 4 ) )
+
+            fullness[ Math.floor( SNAPSHOT_buffer[ sensor ][ Object.keys( SNAPSHOT_buffer[ sensor ] ) ].fullness * 4 ) ]++;
+            batteryFullness[ Math.floor( SNAPSHOT_buffer[ sensor ][ Object.keys( SNAPSHOT_buffer[ sensor ] ) ].power * 4 ) ]++;
+        }
+
+        updatePie( fullness, batteryFullness );
+        update_table_dict( listDataset );
+        fill_table( )
+
+        var size = Object.keys( SNAPSHOT_buffer ).length;
+
+        if ( size == 220 ) {
+            // the list cache is full
+            // console.log('220 ')
+
+            // map
+            updateBuffer( SNAPSHOT_buffer )
+            addMarker( )
+            // map...
+
+            let linelist = getLineList( )
+
+            listDataset = listDataset.sort( ( a, b ) => b[ 3 ] - a[ 3 ] );
+            var top10Full = listDataset.slice( 0, 10 );
+
+            var top10Full_ID = [ ]
+            top10Full.forEach( ele => {
+                top10Full_ID.push( ele[ 0 ] )
+            } )
+
+
+            // 1. remove line from chart
+            // => only exists in line chart dataset
+            //      => update line chart dataset array
+            // => current sensor_ID
+            if ( linelist != undefined ) {
+                // there are lines in the chart
+                let idsNeedRemove = linelist.filter( x => !top10Full_ID.includes( x ) );
+
+                idsNeedRemove.forEach( idNeedRemove => {
+                    removeLine( idNeedRemove )
+                    console.log( idNeedRemove )
+
+                } )
+                removeLine( sensor_ID )
+                linelist = getLineList( )
+            }
+
+            console.log( top10Full_ID )
+
+
+            // 2. add line to chart
+            // => does not exists in line chart dataset
+            // => 
+
+            for ( const ele in top10Full ) {
+                // console.log( top10Full[ ele ][0] )
+                if ( !linelist.includes( top10Full[ ele ][ 0 ] ) ) {
+                    // console.log( top10Full_ID )
+                    // console.log( 'buildings/' + top10Full[ ele ][ 6 ] + '/' + BUILDING + '/' + LEVEL + '/' + USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ] )
+                    // console.log( 'buildings/' + top10Full[ ele ][ 6 ] + '/'+top10Full[ ele ][ 1 ] +'/L' + top10Full[ ele ][ 2 ] + '/' + top10Full[ ele ][ 0 ] )
+                    const dbRef = query( ref( db, 'buildings/' + top10Full[ ele ][ 6 ] + '/' + top10Full[ ele ][ 1 ] + '/L' + top10Full[ ele ][ 2 ] + '/' + top10Full[ ele ][ 0 ] ), limitToLast( 16 * 5 ) );
+                    onValue( dbRef, ( sensorData ) => {
+                        var data = [ ]
+                        for ( const point in sensorData.val( ) ) {
+                            data.push( {
+                                x: sensorData.val( )[ point ].timestamp,
+                                y: sensorData.val( )[ point ].fullness * 100
+                            } )
+                            // console.log(sensorData.val( )[ point ].timestamp)
+                        }
+                        // console.log(sensorData.key,top10Full_ID)
+                        updateLine( data, sensorData.key )
+                    }, {
+                        onlyOnce: true
+                    } )
+                }
+            }
+            console.log( linelist )
+
+        }
+
+    }
+
+
+    for ( const BUILDING in USYD_LOOKUP ) {
+        // console.log( BUILDING )
+        for ( const LEVEL in USYD_LOOKUP[ BUILDING ] ) {
+            // console.log( LEVEL )
+            for ( const ID in USYD_LOOKUP[ BUILDING ][ LEVEL ] ) {
+                // console.log("buildings/USYD/" + BUILDING + '/' + LEVEL + '/' + USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ] )
+                const dbRef = query( ref( db, "buildings/USYD/" + BUILDING + '/' + LEVEL + '/' + USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ] ), limitToLast( 1 ) );
+                // const dbRef = query( ref( db, "buildings/USYD/" + BUILDING + '/' + LEVEL + '/' + USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ] ), limitToLast( 10 ) );
+                // get the latest update for each sensor
+                onValue( dbRef, ( snapshot ) => {
+                    // console.log( snapshot.key )
+                    SNAPSHOT_buffer[ snapshot.key ] = snapshot.val( );
+                    SNAPSHOT_buffer[ snapshot.key ][ Object.keys( SNAPSHOT_buffer[ snapshot.key ] ) ][ 'level' ] = LEVEL;
+                    SNAPSHOT_buffer[ snapshot.key ][ Object.keys( SNAPSHOT_buffer[ snapshot.key ] ) ][ 'building' ] = 'USYD';
+                    updatePage( USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ] )
+                } )
+            }
+        }
+    }
+
+    for ( const sName in stations_LOOKUP ) {
+        // console.log( sName )
+        for ( const LEVEL in stations_LOOKUP[ sName ] ) {
+            // console.log( LEVEL )
+            for ( const ID in stations_LOOKUP[ sName ][ LEVEL ] ) {
+                // console.log( stations_LOOKUP[ sName ][ LEVEL ][ ID ] )
+
+                const dbRef = query( ref( db, "buildings/Stations/" + sName + '/' + LEVEL + '/' + stations_LOOKUP[ sName ][ LEVEL ][ ID ] ), limitToLast( 1 ) );
+                // const dbRef = query( ref( db, "buildings/Stations/" + sName + '/' + LEVEL + '/' + stations_LOOKUP[ sName ][ LEVEL ][ ID ] ), limitToLast( 10 ) );
+                onValue( dbRef, ( snapshot ) => {
+                    // console.log( snapshot.key )
+                    SNAPSHOT_buffer[ snapshot.key ] = snapshot.val( );
+                    SNAPSHOT_buffer[ snapshot.key ][ Object.keys( SNAPSHOT_buffer[ snapshot.key ] ) ][ 'level' ] = LEVEL;
+                    SNAPSHOT_buffer[ snapshot.key ][ Object.keys( SNAPSHOT_buffer[ snapshot.key ] ) ][ 'building' ] = 'Stations';
+                    updatePage( stations_LOOKUP[ sName ][ LEVEL ][ ID ] )
+                } )
+            }
+        }
+    }
+</script>

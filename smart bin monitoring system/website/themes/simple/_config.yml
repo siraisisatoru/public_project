@@ -1,0 +1,8 @@
+
+menu:
+  Home: / || fa-house
+  Analysis: /analysis/ || fa-chart-line
+  Cluster and regression: /cluster/ || fa-circle-nodes
+  List real time: /list/ || fa-table-list
+  Map: /map/ || fa-map-location
+

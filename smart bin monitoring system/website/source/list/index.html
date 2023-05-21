@@ -1,0 +1,464 @@
+<input type="checkbox" id="loading-modal" class="modal-toggle" checked />
+<div id="modal-div" class="modal">
+    <div class="modal-box">
+        <h3 id="loading-modal-text" class="font-bold text-lg">Loading data from database</h3>
+        <div class="text-center">
+            <progress id="loading_progress" class="progress progress-info w-56 bg-slate-400" value="0" max="100"></progress>
+        </div>
+    </div>
+</div>
+
+<div class="p-3 sm:p-4 ">
+    <!-- <label for="table-search" class="sr-only">Search</label> -->
+    <div class="relative mt-1">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <input type="text" id="table-search" class="table-search bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-80 pl-10 p-2.5" placeholder="Search for items in all columns" data-column="all" />
+    </div>
+</div>
+
+<div id="table-container">
+
+    <div class="pager text-center text-sm sm:text-base flex flex-col flex-">
+
+        <div>
+            <i class="fa-solid fa-angles-left first" alt="First"></i>
+            <i class="fa-solid fa-less-than prev" alt="Prev"></i>
+
+            <!-- the "pagedisplay" can be any element, including an input -->
+            <span class="pagedisplay" data-pager-output-filtered="{startRow:input} &ndash; {endRow} / {filteredRows} of {totalRows} total rows"></span>
+
+            <i class="fa-solid fa-greater-than next" alt="Next"></i>
+            <i class="fa-solid fa-angles-right last" alt="Last"></i>
+
+            <select class="pagesize" title="Select page size">
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+        <div>
+            <spam> Page: </spam>
+            <select class="gotoPage" title="Select page number"></select>
+        </div>
+
+    </div>
+
+    <table id="full_list" class="tablesorter border-none w-full text-center text-xs sm:text-lg ">
+        <thead class="bg-gray-100">
+            <th id="Index">Index</th>
+            <th id="SensorID">SensorID</th>
+            <th id="Date">Date</th>
+            <th id="Location">Location</th>
+            <th id="Power">Power</th>
+            <th id="Fullness">Fullness</th>
+            <th id="Weight">Weight</th>
+        </thead>
+        <tbody id="tbody1"></tbody>
+    </table>
+</div>
+
+
+
+<script src="./../../js/lookup.js"></script>
+<script src="./../../js/lookup_floor_image.js"></script>
+<script src="./../../js/touchPT_lookup.js"></script>
+<script src="./../../js/const_lookup.js"></script>
+<script src="./../../js/ID_map.js"></script>
+
+
+
+<script type="module">
+    var index = 0;
+    var tbody = document.getElementById( "tbody1" );
+
+    import {
+        initializeApp
+    } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
+
+    import {
+        getDatabase,
+        ref,
+        child,
+        onValue,
+        get,
+        query,
+        limitToLast
+    } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-database.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyAL3XpEw-xxZJcsUQLzt9j0XO2XxdF95Kk",
+        authDomain: "elec5518-7d7c2.firebaseapp.com",
+        databaseURL: "https://elec5518-7d7c2-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "elec5518-7d7c2",
+        storageBucket: "elec5518-7d7c2.appspot.com",
+        messagingSenderId: "29394112797",
+        appId: "1:29394112797:web:c11a859bb4ea52166a91f4",
+    };
+
+    // Initialize Firebase
+    const app = initializeApp( firebaseConfig );
+    const db = getDatabase( );
+
+    const numberOfdata = 16 * 4;
+    const fullnumberOfdata = numberOfdata * 220;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.scroll = "no";
+
+    console.log( "begin website" );
+
+    var SNAPSHOT_buffer = {};
+
+
+    // document.getElementById( "Index" ).addEventListener( "click", beginSorting )
+    // document.getElementById( "SensorID" ).addEventListener( "click", beginSorting )
+    // document.getElementById( "Date" ).addEventListener( "click", beginSorting )
+    // document.getElementById( "Location" ).addEventListener( "click", beginSorting )
+    // document.getElementById( "Power" ).addEventListener( "click", beginSorting )
+    // document.getElementById( "Time" ).addEventListener( "click", beginSorting )
+    // document.getElementById( "Weight" ).addEventListener( "click", beginSorting )
+
+    function AddItemToTable (
+        sensorID,
+        date,
+        fullness,
+        location,
+        power,
+        time,
+        weight
+    ) {
+        let trow = document.createElement( "tr" );
+        trow.classList.add( "border" );
+        trow.classList.add( "border-slate-200" );
+        let td1 = document.createElement( "td" );
+        let td2 = document.createElement( "td" );
+        let td3 = document.createElement( "td" );
+        let td4 = document.createElement( "td" );
+        let td5 = document.createElement( "td" );
+        let td6 = document.createElement( "td" );
+        let td7 = document.createElement( "td" );
+        td1.innerHTML = ++index;
+
+        td2.innerHTML = sensorID;
+        td3.innerHTML = date + ' ' + time;
+        td4.innerHTML = location;
+        td5.innerHTML = power;
+        td6.innerHTML = fullness;
+        td7.innerHTML = weight;
+
+        trow.appendChild( td1 );
+        trow.appendChild( td2 );
+        trow.appendChild( td3 );
+        trow.appendChild( td4 );
+        trow.appendChild( td5 );
+        trow.appendChild( td6 );
+        trow.appendChild( td7 );
+
+        tbody.appendChild( trow );
+    }
+
+    function GetAllDataRealtime ( ) {
+        const db = getDatabase( );
+
+        for ( const BUILDING in USYD_LOOKUP ) {
+            // console.log( BUILDING )
+            for ( const LEVEL in USYD_LOOKUP[ BUILDING ] ) {
+                // console.log( LEVEL )
+                for ( const ID in USYD_LOOKUP[ BUILDING ][ LEVEL ] ) {
+                    onValue( query( ref( db, "buildings/USYD/" + BUILDING + '/' + LEVEL + '/' + USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ] ), limitToLast( numberOfdata ) ), ( snapshot ) => {
+
+                        snapshot.forEach( ( childSnapshot ) => {
+                            const childKey = childSnapshot.key;
+                            const childData = childSnapshot.val( );
+                            let time = new Date( childData.timestamp );
+
+                            AddItemToTable(
+                                USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ],
+                                time.toLocaleDateString( 'en-AU' ),
+                                childData.fullness.toFixed( 3 ),
+                                childData.location.split( ' ' )[ 0 ],
+                                ( childData.power * 100 ).toFixed( 3 ),
+                                time.toLocaleTimeString( 'en-AU' ),
+                                childData.weight.toFixed( 3 ),
+                            )
+                        } );
+                        let numb = document.getElementById( "tbody1" ).children.length;
+                        // console.log( numb )
+                        document.getElementById( "loading_progress" ).setAttribute( 'value', numb )
+                        document.getElementById( "loading_progress" ).setAttribute( 'max', fullnumberOfdata )
+                    }, {
+                        onlyOnce: true
+                    } );
+
+                    onValue( query( ref( db, "buildings/USYD/" + BUILDING + '/' + LEVEL + '/' + USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ] ), limitToLast( 1 ) ), ( snapshot ) => {
+                        if ( SNAPSHOT_buffer[ snapshot.key ] == undefined ) {
+                            // the first time loaded latest data
+                            SNAPSHOT_buffer[ snapshot.key ] = snapshot.val( );
+                        } else {
+                            SNAPSHOT_buffer[ snapshot.key ] = snapshot.val( );
+
+                            const childData = SNAPSHOT_buffer[ snapshot.key ][ Object.keys( SNAPSHOT_buffer[ snapshot.key ] ) ];
+                            let time = new Date( childData.timestamp );
+                            AddItemToTable(
+                                USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ],
+                                time.toLocaleDateString( 'en-AU' ),
+                                childData.fullness.toFixed( 3 ),
+                                childData.location.split( ' ' )[ 0 ],
+                                ( childData.power * 100 ).toFixed( 3 ),
+                                time.toLocaleTimeString( 'en-AU' ),
+                                childData.weight.toFixed( 3 ),
+                            );
+                            $( "#full_list" ).trigger( "update" );
+
+                        }
+                    } )
+                }
+            }
+        }
+
+        for ( const sName in stations_LOOKUP ) {
+            // console.log( sName )
+            for ( const LEVEL in stations_LOOKUP[ sName ] ) {
+                // console.log( LEVEL )
+                for ( const ID in stations_LOOKUP[ sName ][ LEVEL ] ) {
+                    // console.log( stations_LOOKUP[ sName ][ LEVEL ][ ID ] )
+                    onValue( query( ref( db, "buildings/Stations/" + sName + '/' + LEVEL + '/' + stations_LOOKUP[ sName ][ LEVEL ][ ID ] ), limitToLast( numberOfdata ) ), ( snapshot ) => {
+
+                        snapshot.forEach( ( childSnapshot ) => {
+                            const childKey = childSnapshot.key;
+                            const childData = childSnapshot.val( );
+                            let time = new Date( childData.timestamp );
+
+                            AddItemToTable(
+                                stations_LOOKUP[ sName ][ LEVEL ][ ID ],
+                                time.toLocaleDateString( 'en-AU' ),
+                                childData.fullness.toFixed( 3 ),
+                                childData.location.split( ' ' )[ 0 ],
+                                ( childData.power * 100 ).toFixed( 3 ),
+                                time.toLocaleTimeString( 'en-AU' ),
+                                childData.weight.toFixed( 3 ),
+                            )
+                        } );
+                        let numb = document.getElementById( "tbody1" ).children.length;
+                        // console.log( numb )
+                        document.getElementById( "loading_progress" ).setAttribute( 'value', numb )
+                        document.getElementById( "loading_progress" ).setAttribute( 'max', fullnumberOfdata )
+                        if ( numb === fullnumberOfdata ) {
+                            document.getElementById( "loading-modal" ).removeAttribute( "checked" )
+                            document.getElementById( 'loading_progress' ).removeAttribute( 'value' )
+                            document.getElementById( 'loading_progress' ).removeAttribute( 'max' )
+                            document.documentElement.style.overflow = 'scroll';
+                            document.body.scroll = "yes";
+                            $( "#full_list" ).trigger( "update" );
+
+                        }
+                    }, {
+                        onlyOnce: true
+                    } );
+
+                    onValue( query( ref( db, "buildings/Stations/" + sName + '/' + LEVEL + '/' + stations_LOOKUP[ sName ][ LEVEL ][ ID ] ), limitToLast( 1 ) ), ( snapshot ) => {
+                        if ( SNAPSHOT_buffer[ snapshot.key ] == undefined ) {
+                            // the first time loaded latest data
+                            SNAPSHOT_buffer[ snapshot.key ] = snapshot.val( );
+                        } else {
+                            SNAPSHOT_buffer[ snapshot.key ] = snapshot.val( );
+                            const childData = SNAPSHOT_buffer[ snapshot.key ][ Object.keys( SNAPSHOT_buffer[ snapshot.key ] ) ];
+                            let time = new Date( childData.timestamp );
+                            AddItemToTable(
+                                stations_LOOKUP[ sName ][ LEVEL ][ ID ],
+                                time.toLocaleDateString( 'en-AU' ),
+                                childData.fullness.toFixed( 3 ),
+                                childData.location.split( ' ' )[ 0 ],
+                                ( childData.power * 100 ).toFixed( 3 ),
+                                time.toLocaleTimeString( 'en-AU' ),
+                                childData.weight.toFixed( 3 ),
+                            );
+                            $( "#full_list" ).trigger( "update" );
+
+                        }
+                    } )
+                }
+            }
+        }
+    }
+
+    function beginSorting ( ) {
+        console.log( 'begin sorting' )
+
+        document.getElementById( "modal-div" ).classList.add( "modal-open" )
+
+        document.getElementById( 'loading-modal-text' ).textContent = "Updating table"
+        document.documentElement.style.overflow = 'hidden';
+        document.body.scroll = "no";
+    }
+
+    function endSorting ( ) {
+        document.documentElement.style.overflow = 'scroll';
+        document.body.scroll = "yes";
+        // document.getElementById( "loading-modal" ).removeAttribute( "checked" )
+        document.getElementById( "modal-div" ).classList.remove( "modal-open" )
+
+    }
+
+    // document.querySelector( '#Index' ).addEventListener( 'click', (document.getElementById( "modal-div" ).classList.add("modal-open")) )
+    // document.querySelector( '#SensorID' ).addEventListener( 'click', (document.getElementById( "modal-div" ).classList.add("modal-open")) )
+    // document.querySelector( '#Date' ).addEventListener( 'click', (document.getElementById( "modal-div" ).classList.add("modal-open")) )
+    // document.querySelector( '#Location' ).addEventListener( 'click', (document.getElementById( "modal-div" ).classList.add("modal-open")) )
+    // document.querySelector( '#Power' ).addEventListener( 'click', (document.getElementById( "modal-div" ).classList.add("modal-open")) )
+    // document.querySelector( '#Time' ).addEventListener( 'click', (document.getElementById( "modal-div" ).classList.add("modal-open")) )
+    // document.querySelector( '#Weight' ).addEventListener( 'click', (document.getElementById( "modal-div" ).classList.add("modal-open")) )
+
+    $( function ( ) {
+        var $table = $( "#full_list" ).tablesorter( {
+            widgets: [ "filter" ],
+            widgetOptions: {
+                filter_external: ".table-search",
+                filter_columnFilters: false,
+                filter_saveFilters: false,
+            },
+        } );
+
+        // assign the sortStart event
+        $( "table" ).bind( "sortBegin", function ( e, t ) {
+            beginSorting( )
+            // console.log( 'begin' )
+
+        } )
+
+        $( "table" ).bind( "sortEnd", function ( e, t ) {
+            console.log( 'done' )
+            endSorting( )
+        } );
+
+        $( "table" ).bind( "filterStart", function ( event, filters ) {
+            // filters contains an array of the current filters
+            console.log( "filter start" );
+            beginSorting( )
+        } );
+
+        $( "table" ).bind( "filterEnd", function ( event, config ) {
+            // $(this).find("tr.tablesorter-filter-row").removeClass("filtering");
+            console.log( "filter end" );
+            var old_filtered = $( "#full_list" ).find( ".hidden" );
+            old_filtered.removeClass( "hidden" );
+            var filtered_ele = $( "#full_list" ).find( ".filtered" );
+            filtered_ele.addClass( "hidden" );
+            endSorting( )
+        } );
+
+        // **********************************
+        //  Description of ALL pager options
+        // **********************************
+        var pagerOptions = {
+
+            // target the pager markup - see the HTML block below
+            container: $( ".pager" ),
+
+            // use this url format "http:/mydatabase.com?page={page}&size={size}&{sortList:col}"
+            ajaxUrl: null,
+
+            // modify the url after all processing has been applied
+            customAjaxUrl: function ( table, url ) {
+                return url;
+            },
+
+            // ajax error callback from $.tablesorter.showError function
+            // ajaxError: function( config, xhr, settings, exception ) { return exception; };
+            // returning false will abort the error message
+            ajaxError: null,
+
+            // add more ajax settings here
+            // see http://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings
+            ajaxObject: {
+                dataType: 'json'
+            },
+
+            // process ajax so that the data object is returned along with the total number of rows
+            ajaxProcessing: null,
+
+            // Set this option to false if your table data is preloaded into the table, but you are still using ajax
+            processAjaxOnInit: true,
+
+            // output string - default is '{page}/{totalPages}'
+            // possible variables: {size}, {page}, {totalPages}, {filteredPages}, {startRow}, {endRow}, {filteredRows} and {totalRows}
+            // also {page:input} & {startRow:input} will add a modifiable input in place of the value
+            // In v2.27.7, this can be set as a function
+            // output: function(table, pager) { return 'page ' + pager.startRow + ' - ' + pager.endRow; }
+            output: '{startRow:input} &ndash; {endRow} / {totalRows} rows',
+
+            // apply disabled classname (cssDisabled option) to the pager arrows when the rows
+            // are at either extreme is visible; default is true
+            updateArrows: true,
+
+            // starting page of the pager (zero based index)
+            page: 0,
+
+            // Number of visible rows - default is 10
+            size: 20,
+
+            // Save pager page & size if the storage script is loaded (requires $.tablesorter.storage in jquery.tablesorter.widgets.js)
+            savePages: false,
+
+            // Saves tablesorter paging to custom key if defined.
+            // Key parameter name used by the $.tablesorter.storage function.
+            // Useful if you have multiple tables defined
+            storageKey: 'tablesorter-pager',
+
+            // Reset pager to this page after filtering; set to desired page number (zero-based index),
+            // or false to not change page at filter start
+            pageReset: 0,
+
+            // if true, the table will remain the same height no matter how many records are displayed. The space is made up by an empty
+            // table row set to a height to compensate; default is false
+            fixedHeight: false,
+
+            // remove rows from the table to speed up the sort of large tables.
+            // setting this to false, only hides the non-visible rows; needed if you plan to add/remove rows with the pager enabled.
+            removeRows: false,
+
+            // If true, child rows will be counted towards the pager set size
+            countChildRows: false,
+
+            // css class names of pager arrows
+            cssNext: '.next', // next page arrow
+            cssPrev: '.prev', // previous page arrow
+            cssFirst: '.first', // go to first page arrow
+            cssLast: '.last', // go to last page arrow
+            cssGoto: '.gotoPage', // select dropdown to allow choosing a page
+
+            cssPageDisplay: '.pagedisplay', // location of where the "output" is displayed
+            cssPageSize: '.pagesize', // page size selector - select dropdown that sets the "size" option
+
+            // class added to arrows when at the extremes (i.e. prev/first arrows are "disabled" when on the first page)
+            cssDisabled: 'disabled', // Note there is no period "." in front of this class name
+            cssErrorRow: 'tablesorter-errorRow' // ajax error information row
+
+        };
+
+        $( "table" )
+            // Initialize tablesorter
+            // ***********************
+            .tablesorter( {
+                theme: 'blue',
+                widthFixed: true,
+                widgets: [ 'zebra', 'filter' ]
+            } )
+
+            // initialize the pager plugin
+            // ****************************
+            .tablesorterPager( pagerOptions );
+
+        // go to page 1 showing 10 rows
+        $( '.goto' ).click( function ( ) {
+            // triggering "pageAndSize" without parameters will reset the
+            // pager to page 1 and the original set size (10 by default)
+            // $('table').trigger('pageAndSize')
+            $( 'table' ).trigger( 'pageAndSize', [ 1, 10 ] );
+        } );
+
+    } );
+
+    window.onload = GetAllDataRealtime;
+</script>

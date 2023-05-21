@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="EN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+    <title>
+        <% var title = page.path.split('/')[0] %>
+        <% if (title != "index.html" && title != "404.html" ) { %>
+        <%-title.charAt(0).toUpperCase() + title.slice(1) %> view
+        <% } else if (title == "404.html" ){ %>
+        404 No found
+        <% } else{ %>
+        Home
+        <% } %>
+    </title>
+    <link rel="icon" type="image/x-icon" href="/image/recycle-bin.ico" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js" integrity="sha512-pumBsjNRGGqkPzKHndZMaAG+bir374sORyzM3uulLV14lN5LyykqNk8eEeUlUkB3U0M4FApyaHraT65ihJhDpQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <%- css(['css/main.css']) %>
+
+    <!-- real time list -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.min.js" integrity="sha512-qzgd5cYSZcosqpzpn7zF2ZId8f/8CHmFKZ8j7mU4OUXTNRd5g+ZHBPsgKEwoqxCtdQvExE5LprwwPAgoicguNg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.widgets.min.js" integrity="sha512-dj/9K5GRIEZu+Igm9tC16XPOTz0RdPk9FGxfZxShWf65JJNU2TjbElGjuOo3EhwAJRPhJxwEJ5b+/Ouo+VqZdQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/extras/jquery.tablesorter.pager.min.js" integrity="sha512-y845ijdup9lDunrcSRQAlFdQICHVhkB5UNguWRX8A3L+guxO7Oow0poojw0PLckhcKij++h85bnyro80fjR9+A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/css/jquery.tablesorter.pager.min.css" integrity="sha512-TWYBryfpFn3IugX13ZCIYHNK3/2sZk3dyXMKp3chZL+0wRuwFr1hDqZR9Qd5SONzn+Lja10hercP2Xjuzz5O3g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+
+    <!-- analysis -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@^2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@^1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-autocolors@0.2.2/dist/chartjs-plugin-autocolors.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-trendline@2.0.2/src/chartjs-plugin-trendline.min.js"></script>
+
+
+    <!-- map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-extra-markers/1.2.1/css/leaflet.extra-markers.min.css" integrity="sha512-wurszDyO1nj6ESdfrXb9h1hmoHMu3sQ3iXgKcu/p81lT+KaPGkta9NIPX7k6XXGgVYpcRHcc8AA4UIeQ7Ax/Cw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-extra-markers/1.2.1/js/leaflet.extra-markers.min.js" integrity="sha512-ejMFZwlfxDqEaSHHcCJ9EhzzDyp3QB5NjmGfOp1iwUQ7pFam2pX3EKERWvWK8H5HLQG6ETrx3RvrEFMQ4kIQ/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peity/3.3.0/jquery.peity.min.js" integrity="sha512-L5mXjK4YbZPFEuunivJM+SKJG5qxqElc8RlaLDRd1Z5TtDACmugfzIRyFnYSGD4jPYoEMJbXhUJFZsBWDV8yLQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <script src="/js/Semicircle.js"></script>
+    <%- css(['css/MarkerCluster.css']) %> <%- css(['css/MarkerCluster.Default.css']) %>
+    <script src="/js/leaflet.markercluster.js"></script>
+</head>
+
+<%- partial('_partial/header') %>
+
+<body>
+
+    <% if (title == "index.html") {%>
+    <%- partial('index') %>
+    <%- partial('_partial/footer') %>
+
+    <%} else if (title == "analysis") {%>
+    <%- page.content %>
+    <%- partial('_partial/footer') %>
+
+    <%} else if (title == "cluster") {%>
+    <%- page.content %>
+    <%- partial('_partial/footer') %>
+
+    <% } else if (title == "map") { %>
+    <div id="content">
+        <div id="map" class="container mb-4 mt-4 mx-auto"></div>
+    </div>
+    <%- page.content %>
+
+    <% } else if (title == "404.html") { %>
+    <%- page.content %>
+    <%- partial('_partial/footer') %>
+
+    <% } else {%>
+    <main class="flex flex-col mx-auto w-full items-center justify-center pb-4 mb-auto container mt-2">
+        <%- body %>
+    </main>
+    <%- partial('_partial/footer') %>
+    <% } %>
+
+    <!-- Go up button -->
+    <button id="gotop" class="text-white text-base z-10000 btn btn-ghost btn-circle fixed bottom-5 right-14 invisible w-12 h-12 bg-blue-500 hover:bg-blue-600 active:shadow-lg mouse shadow transition ease-in duration-200 focus:outline-none">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+    <script>
+        $( "#gotop" ).click( function animateScroll ( ) {
+            // input.push( $(this).attr('id') );
+            var scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            if ( scrollTop !== 0 ) {
+                window.requestAnimationFrame( animateScroll );
+                window.scrollTo( 0, scrollTop - scrollTop / 5 );
+            }
+        } );
+
+        $( function ( ) {
+            $( window ).on( "scroll", function ( e ) {
+                var scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                if ( scrollTop !== 0 ) {
+                    $( "#gotop" ).removeClass( "invisible" );
+                } else {
+                    $( "#gotop" ).addClass( "invisible" );
+                }
+            } );
+        } );
+        var customViewportCorrectionVariable = "vh";
+
+        function setViewportProperty ( doc ) {
+            var prevClientHeight;
+            var customVar = "--" + ( customViewportCorrectionVariable || "vh" );
+
+            function handleResize ( ) {
+                var clientHeight = doc.clientHeight;
+                if ( clientHeight === prevClientHeight ) return;
+                requestAnimationFrame( function updateViewportHeight ( ) {
+                    doc.style.setProperty( customVar, clientHeight * 0.01 + "px" );
+                    prevClientHeight = clientHeight;
+                } );
+            }
+            handleResize( );
+            return handleResize;
+        }
+        window.addEventListener( "resize", setViewportProperty( document.documentElement ) );
+    </script>
+</body>
+
+</html>

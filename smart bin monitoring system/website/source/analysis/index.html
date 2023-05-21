@@ -1,0 +1,184 @@
+<!-- <a href="#chart1">Jump to the part of the page with the “chart1” id </a> -->
+
+<input type="checkbox" id="loading-modal" class="modal-toggle" checked />
+<div id="modal-div" class="modal">
+    <div class="modal-box">
+        <h3 id="loading-modal-text" class="font-bold text-lg">Loading data from database</h3>
+        <div class="text-center">
+            <progress id="loading_progress" class="progress progress-info w-56 bg-slate-400" value="0" max="100"></progress>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<div id="main_flex" class="flex flex-col p-3 mb-auto ">
+    <div class="content">
+        <div id="map" class="w-wide h-96 mx-auto rounded-lg m-2 shadow-md"></div>
+    </div>
+
+    <div id="USYD-collapse">
+        <div class="collapse collapse-plus w-wide mx-auto my-1 rounded-lg">
+            <input type="checkbox" class="peer" id="checkbox-USYD" />
+            <div class="collapse-title bg-sky-100 text-primary-content peer-checked:bg-sky-300 ">
+                USYD buildings
+            </div>
+            <div id="USYD-collapse-detail" class="collapse-content bg-sky-100 text-primary-content peer-checked:bg-sky-300 ">
+
+
+            </div>
+        </div>
+    </div>
+    <div id="stations-collapse">
+        <div class="collapse collapse-plus w-wide mx-auto my-1 rounded-lg">
+            <input type="checkbox" class="peer" id="checkbox-Stations" />
+            <div class="collapse-title bg-orange-100 text-primary-content peer-checked:bg-orange-300 ">
+                Stations
+            </div>
+            <div id="stations-collapse-detail" class="collapse-content bg-orange-100 text-primary-content peer-checked:bg-orange-300 ">
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<script src="./../../js/lookup.js"></script>
+<script src="./../../js/lookup_floor_image.js"></script>
+<script src="./../../js/touchPT_lookup.js"></script>
+<script src="./../../js/const_lookup.js"></script>
+<script src="./../../js/analysis/an_map.js"></script>
+<script src="./../../js/ID_map.js"></script>
+
+<script type="module">
+    import {
+        updateLine,
+        removeLine,
+        getLineList,
+    } from "./../../js/analysis/an_charts.js"
+
+    import {
+        initializeApp
+    } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
+
+    import {
+        getDatabase,
+        ref,
+        child,
+        onValue,
+        get,
+        query,
+        limitToLast
+    } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAL3XpEw-xxZJcsUQLzt9j0XO2XxdF95Kk",
+        authDomain: "elec5518-7d7c2.firebaseapp.com",
+        databaseURL: "https://elec5518-7d7c2-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "elec5518-7d7c2",
+        storageBucket: "elec5518-7d7c2.appspot.com",
+        messagingSenderId: "29394112797",
+        appId: "1:29394112797:web:c11a859bb4ea52166a91f4",
+    };
+
+
+    const app = initializeApp( firebaseConfig );
+
+    const db = getDatabase( );
+
+    var SNAPSHOT_buffer = {};
+
+    const fullnumberOfdata = 220;
+    document.getElementById( "loading_progress" ).setAttribute( 'max', fullnumberOfdata )
+    document.body.classList.add("overflow-hidden");
+
+    var loadingData = 0;
+
+    // var top10Full;
+
+
+    function updateChart ( buildings, building, level, id ) {
+        // aim: set the particular line
+
+        // console.log( buildings, building, level, id )
+
+        let linelist = getLineList( building );
+        if ( linelist != undefined ) {
+            removeLine( id, building )
+        }
+
+        const dbRef = query( ref( db, 'buildings/' + buildings + '/' + building + '/' + level + '/' + id ), limitToLast( 16 * 5 ) );
+        onValue( dbRef, ( sensorData ) => {
+            // let numb = Object.keys( SNAPSHOT_buffer ).length;
+            // console.log( numb )
+            // console.log(loadingData)
+            if ( loadingData < 219 ) {
+                document.getElementById( "loading_progress" ).setAttribute( 'value', loadingData )
+                loadingData++;
+            } else {
+                document.getElementById( "loading-modal" ).removeAttribute( "checked" )
+                document.getElementById( 'loading_progress' ).removeAttribute( 'value' )
+                document.getElementById( 'loading_progress' ).removeAttribute( 'max' )
+                document.body.classList.remove("overflow-hidden");
+            }
+
+            var data = [ ]
+            for ( const point in sensorData.val( ) ) {
+                data.push( {
+                    x: sensorData.val( )[ point ].timestamp,
+                    y: sensorData.val( )[ point ].fullness * 100
+                } )
+            }
+
+            updateLine( data, id, building )
+
+        }, {
+            onlyOnce: true
+        } )
+    }
+
+    for ( const BUILDING in USYD_LOOKUP ) {
+        // console.log( BUILDING )
+        for ( const LEVEL in USYD_LOOKUP[ BUILDING ] ) {
+            // console.log( LEVEL )
+            for ( const ID in USYD_LOOKUP[ BUILDING ][ LEVEL ] ) {
+                // console.log("buildings/USYD/" + BUILDING + '/' + LEVEL + '/' + USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ] )
+                const dbRef = query( ref( db, "buildings/USYD/" + BUILDING + '/' + LEVEL + '/' + USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ] ), limitToLast( 1 ) );
+                // const dbRef = query( ref( db, "buildings/USYD/" + BUILDING + '/' + LEVEL + '/' + USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ] ), limitToLast( 10 ) );
+                // get the latest update for each sensor
+                onValue( dbRef, ( snapshot ) => {
+                    // console.log( snapshot.key )
+                    SNAPSHOT_buffer[ snapshot.key ] = snapshot.val( );
+                    SNAPSHOT_buffer[ snapshot.key ][ Object.keys( SNAPSHOT_buffer[ snapshot.key ] ) ][ 'level' ] = LEVEL;
+                    SNAPSHOT_buffer[ snapshot.key ][ Object.keys( SNAPSHOT_buffer[ snapshot.key ] ) ][ 'building' ] = 'USYD';
+                    updateChart( "USYD", BUILDING, LEVEL, USYD_LOOKUP[ BUILDING ][ LEVEL ][ ID ] )
+                } )
+            }
+        }
+    }
+
+    for ( const sName in stations_LOOKUP ) {
+        // console.log( sName )
+        for ( const LEVEL in stations_LOOKUP[ sName ] ) {
+            // console.log( LEVEL )
+            for ( const ID in stations_LOOKUP[ sName ][ LEVEL ] ) {
+                // console.log( stations_LOOKUP[ sName ][ LEVEL ][ ID ] )
+
+                const dbRef = query( ref( db, "buildings/Stations/" + sName + '/' + LEVEL + '/' + stations_LOOKUP[ sName ][ LEVEL ][ ID ] ), limitToLast( 1 ) );
+                // const dbRef = query( ref( db, "buildings/Stations/" + sName + '/' + LEVEL + '/' + stations_LOOKUP[ sName ][ LEVEL ][ ID ] ), limitToLast( 10 ) );
+                onValue( dbRef, ( snapshot ) => {
+                    // console.log( snapshot.key )
+                    SNAPSHOT_buffer[ snapshot.key ] = snapshot.val( );
+                    SNAPSHOT_buffer[ snapshot.key ][ Object.keys( SNAPSHOT_buffer[ snapshot.key ] ) ][ 'level' ] = LEVEL;
+                    SNAPSHOT_buffer[ snapshot.key ][ Object.keys( SNAPSHOT_buffer[ snapshot.key ] ) ][ 'building' ] = 'Stations';
+                    updateChart( "Stations", sName, LEVEL, stations_LOOKUP[ sName ][ LEVEL ][ ID ] )
+                } )
+
+            }
+        }
+    }
+</script>
